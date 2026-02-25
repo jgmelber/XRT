@@ -96,6 +96,36 @@ file(GLOB XCLBINUTIL_FILES
 )
 set(XCLBINUTIL_FILES_SRCS ${XCLBINUTIL_FILES})
 
+# ==-- x c l b i n u t i l _ l i b (static library) --========================
+set(XCLBINUTIL_LIB_NAME "xclbinutil_lib")
+set(XCLBINUTIL_LIB_SRCS ${XCLBINUTIL_FILES_SRCS} xrt_xclbinutil.cpp)
+add_library(${XCLBINUTIL_LIB_NAME} STATIC ${XCLBINUTIL_LIB_SRCS})
+
+target_compile_definitions(${XCLBINUTIL_LIB_NAME} PRIVATE XRT_API_SOURCE)
+if(NOT WIN32)
+  if(${RapidJSON_VERSION_MAJOR} GREATER 0)
+    target_compile_definitions(${XCLBINUTIL_LIB_NAME} PRIVATE ENABLE_JSON_SCHEMA_VALIDATION)
+  endif()
+endif()
+
+target_include_directories(${XCLBINUTIL_LIB_NAME}
+  PUBLIC
+    ${XRT_SOURCE_DIR}/runtime_src/core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+if(NOT WIN32)
+  target_link_libraries(${XCLBINUTIL_LIB_NAME} PRIVATE crypto)
+endif()
+target_link_libraries(${XCLBINUTIL_LIB_NAME} PRIVATE ${Boost_LIBRARIES} Threads::Threads)
+target_link_libraries(${XCLBINUTIL_LIB_NAME} PRIVATE transformcdo)
+
+install(TARGETS ${XCLBINUTIL_LIB_NAME}
+  ARCHIVE DESTINATION ${XRT_INSTALL_LIB_DIR} COMPONENT ${XRT_BASE_COMPONENT})
+install(FILES xrt_xclbinutil.h
+  DESTINATION ${XRT_INSTALL_INCLUDE_DIR} COMPONENT ${XRT_BASE_COMPONENT})
+# ==-- end xclbinutil_lib --===================================================
+
 file(GLOB XCLBINUTIL_MAIN_FILE
   "xclbinutil.cxx"
 )
@@ -235,7 +265,7 @@ if (GTEST_FOUND AND NOT XRT_SYSTEM_INSTALL)
     "unittests/*.cxx"
   )
 
-  set(XCLBINTEST_SRCS ${XCLBINTEST_FILES} ${XCLBINUTIL_FILES_SRCS})
+  set(XCLBINTEST_SRCS ${XCLBINTEST_FILES} ${XCLBINUTIL_FILES_SRCS} xrt_xclbinutil.cpp)
   add_executable(${UNIT_TEST_NAME} ${XCLBINTEST_SRCS})
 
   if(WIN32)
